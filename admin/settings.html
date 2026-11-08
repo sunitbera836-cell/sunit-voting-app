@@ -1,0 +1,52 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <a href="admin/settings.html">Admin Settings</a>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Admin Settings</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+    <h2>WEBSITE ADMIN SETTINGS</h2>
+
+    <label>Website Name</label>
+    <input id="siteName" placeholder="Enter website name">
+
+    <label>Website Description</label>
+    <input id="siteDescription" placeholder="Enter description">
+
+    <label>Logo Image</label>
+    <input type="file" id="siteLogo" accept="image/*">
+
+    <label>Banner Image</label>
+    <input type="file" id="siteBanner" accept="image/*">
+
+    <button class="main-btn" onclick="saveSettings()">
+        Save Website Settings
+    </button>
+
+    <p id="message"></p>
+
+    <p><a href="../index.html">Back to Website</a></p>
+</div>
+
+<script>
+function saveSettings() {
+
+    const name = document.getElementById("siteName").value;
+    const description = document.getElementById("siteDescription").value;
+
+    localStorage.setItem("websiteName", name);
+    localStorage.setItem("websiteDescription", description);
+
+    document.getElementById("message").textContent =
+        "Settings saved successfully!";
+}
+</script>
+
+</body>
+</html>

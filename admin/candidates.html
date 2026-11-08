@@ -1,0 +1,437 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - Candidate Management</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 25px;
+    font-family: Arial, sans-serif;
+    background: #101827;
+    color: white;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+}
+
+h1 {
+    color: #ffca55;
+    text-align: center;
+}
+
+.form-box, .candidate-box {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #475569;
+    border-radius: 7px;
+    background: #0f172a;
+    color: white;
+}
+
+textarea {
+    min-height: 80px;
+}
+
+button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    margin: 5px;
+}
+
+.save-btn {
+    background: #f5b942;
+    color: #111;
+}
+
+.edit-btn {
+    background: #2563eb;
+    color: white;
+}
+
+.delete-btn {
+    background: #dc2626;
+    color: white;
+}
+
+.cancel-btn {
+    background: #64748b;
+    color: white;
+}
+
+#preview {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 10px;
+    display: none;
+    margin: 10px 0;
+}
+
+.candidate-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+}
+
+.candidate-card {
+    background: #334155;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.candidate-card img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.candidate-card h3 {
+    color: #ffca55;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>ADMIN PANEL</h1>
+
+<div class="form-box">
+
+<h2 id="formTitle">Add Candidate</h2>
+
+<form id="candidateForm">
+
+<label>Candidate Name</label>
+<input type="text" id="name" required>
+
+<label>Description</label>
+<textarea id="description" required></textarea>
+
+<label>Upload Photo</label>
+<input type="file" id="photo" accept="image/*">
+
+<img id="preview" alt="Photo Preview">
+
+<br>
+
+<button type="submit" class="save-btn" id="saveBtn">
+Save Candidate
+</button>
+
+<button type="button" class="cancel-btn"
+id="cancelBtn" hidden>
+Cancel Edit
+</button>
+
+</form>
+</div>
+
+<div class="candidate-box">
+
+<h2>All Candidates</h2>
+
+<p id="count"></p>
+
+<div class="candidate-list" id="candidateList"></div>
+
+</div>
+</div>
+
+<script>
+const STORAGE_KEY = "votingCandidates";
+
+let candidates = JSON.parse(
+    localStorage.getItem(STORAGE_KEY) || "null"
+);
+
+if (!Array.isArray(candidates)) {
+    candidates = [];
+
+    for (let i = 1; i <= 50; i++) {
+        candidates.push({
+            id: i,
+            name: "Candidate " + i,
+            description: "Demo Contestant",
+            photo: ""
+        });
+    }
+
+    saveData();
+}
+
+let editingId = null;
+let selectedPhoto = "";
+
+const form = document.getElementById("candidateForm");
+const nameInput = document.getElementById("name");
+const descriptionInput = document.getElementById("description");
+const photoInput = document.getElementById("photo");
+const preview = document.getElementById("preview");
+const list = document.getElementById("candidateList");
+
+function saveData() {
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(candidates)
+    );
+}
+
+function showCandidates() {
+    list.innerHTML = "";
+
+    document.getElementById("count").textContent =
+        "Total Candidates: " + candidates.length;
+
+    candidates.forEach(candidate => {
+
+        const card = document.createElement("div");
+        card.className = "candidate-card";
+
+        const img = document.createElement("img");
+        img.src = candidate.photo ||
+            "https://placehold.co/300x200?text=Candidate+" + candidate.id;
+        img.alt = candidate.name;
+
+        const title = document.createElement("h3");
+        title.textContent = candidate.name;
+
+        const desc = document.createElement("p");
+        desc.textContent = candidate.description;
+
+        const edit = document.createElement("button");
+        edit.textContent = "Edit";
+        edit.className = "edit-btn";
+        edit.addEventListener("click", () => {
+            editCandidate(candidate.id);
+        });
+
+        const del = document.createElement("button");
+        del.textContent = "Delete";
+        del.className = "delete-btn";
+        del.addEventListener("click", () => {
+            deleteCandidate(candidate.id);
+        });
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+        actions.append(edit, del);
+
+        card.append(img, title, desc, actions);
+        list.appendChild(card);
+    });
+}
+
+function editCandidate(id) {
+
+    const candidate = candidates.find(c => c.id === id);
+
+    if (!candidate) {
+        alert("Candidate not found!");
+        return;
+    }
+
+    editingId = id;
+    selectedPhoto = "";
+
+    nameInput.value = candidate.name;
+    descriptionInput.value = candidate.description;
+
+    document.getElementById("formTitle").textContent =
+        "Edit Candidate " + id;
+
+    document.getElementById("saveBtn").textContent =
+        "Update Candidate";
+
+    document.getElementById("cancelBtn").hidden = false;
+
+    preview.src = candidate.photo || "";
+    preview.style.display = candidate.photo ? "block" : "none";
+
+    photoInput.value = "";
+
+    window.scrollTo(0, 0);
+}
+
+function resetForm() {
+    form.reset();
+
+    editingId = null;
+    selectedPhoto = "";
+
+    preview.src = "";
+    preview.style.display = "none";
+
+    document.getElementById("formTitle").textContent =
+        "Add Candidate";
+
+    document.getElementById("saveBtn").textContent =
+        "Save Candidate";
+
+    document.getElementById("cancelBtn").hidden = true;
+}
+
+function deleteCandidate(id) {
+
+    if (!confirm("Delete this candidate?")) {
+        return;
+    }
+
+    candidates = candidates.filter(c => c.id !== id);
+
+    saveData();
+    showCandidates();
+
+    if (editingId === id) {
+        resetForm();
+    }
+}
+
+photoInput.addEventListener("change", function() {
+
+    const file = this.files[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+        alert("Please select an image file.");
+        this.value = "";
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+
+        const image = new Image();
+
+        image.onload = function() {
+
+            const canvas = document.createElement("canvas");
+
+            const maxSize = 600;
+            const scale = Math.min(
+                1,
+                maxSize / Math.max(image.width, image.height)
+            );
+
+            canvas.width = Math.round(image.width * scale);
+            canvas.height = Math.round(image.height * scale);
+
+            const ctx = canvas.getContext("2d");
+
+            ctx.drawImage(
+                image,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+
+            selectedPhoto = canvas.toDataURL(
+                "image/jpeg",
+                0.75
+            );
+
+            preview.src = selectedPhoto;
+            preview.style.display = "block";
+        };
+
+        image.src = event.target.result;
+    };
+
+    reader.readAsDataURL(file);
+});
+
+form.addEventListener("submit", function(event) {
+
+    event.preventDefault();
+
+    const name = nameInput.value.trim();
+    const description = descriptionInput.value.trim();
+
+    if (!name || !description) {
+        alert("Please fill all required fields.");
+        return;
+    }
+
+    if (editingId !== null) {
+
+        const index = candidates.findIndex(
+            c => c.id === editingId
+        );
+
+        if (index === -1) {
+            alert("Candidate not found!");
+            return;
+        }
+
+        candidates[index] = {
+            ...candidates[index],
+            name: name,
+            description: description,
+            photo: selectedPhoto || candidates[index].photo
+        };
+
+        alert("Candidate updated successfully!");
+
+    } else {
+
+        const newId = candidates.length
+            ? Math.max(...candidates.map(c => c.id)) + 1
+            : 1;
+
+        candidates.push({
+            id: newId,
+            name: name,
+            description: description,
+            photo: selectedPhoto
+        });
+
+        alert("Candidate added successfully!");
+    }
+
+    saveData();
+    showCandidates();
+    resetForm();
+});
+
+document.getElementById("cancelBtn").addEventListener(
+    "click",
+    resetForm
+);
+
+showCandidates();
+</script>
+
+</body>
+</html>
+
